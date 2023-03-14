@@ -1,0 +1,56 @@
+{
+    "name": "InputMap",
+    "maps": [
+        {
+            "name": "Default",
+            "id": "1ae7d7e7-ec30-4717-bd66-31fc178fbb01",
+            "actions": [
+                {
+                    "name": "Slice",
+                    "type": "Button",
+                    "id": "7a27ce90-a23c-4f71-9953-03df44295842",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                }
+            ],
+            "bindings": [
+                {
+                    "name": "",
+                    "id": "ca47c50e-a5a1-4bf8-9c10-3dd18d16d251",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Slice",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "2db4be86-e9dc-43d7-959b-6912d5e845fa",
+                    "path": "<Touchscreen>/Press",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Slice",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ccbed46a-f03a-417f-8d1d-c5d11ac57c6b",
+                    "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Slice",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                }
+            ]
+        }
+    ],
+    "controlSchemes": []
+}

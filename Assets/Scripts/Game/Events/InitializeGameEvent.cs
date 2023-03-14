@@ -1,6 +1,6 @@
 namespace Game.Events
 {
-    public sealed class NewGameEvent : IGameEvent
+    public sealed class InitializeGameEvent : IGameEvent
     {
         public int MapSeed = -1;
     }

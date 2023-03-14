@@ -12,7 +12,8 @@ namespace Game.Core
         public void Start()
         {
             _mainMenuView.enabled = true;
-            _mainMenuView.StartSolo.onClick.AddListener(() => _signalBus.Publish(new NewGameEvent()));
+            _mainMenuView.StartSolo.onClick.AddListener(() => _signalBus.Publish(new InitializeGameEvent()));
+            _signalBus.Subscribe<StartGameEvent>(this, _ => _mainMenuView.enabled = false);
         }
 
         public MainMenuService(MainMenuView view, ISignalBus signalBus)

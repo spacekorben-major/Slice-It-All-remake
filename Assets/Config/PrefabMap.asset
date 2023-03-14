@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c7d6d1289fe340fca6563afb0b8df599, type: 3}
   m_Name: PrefabMap
   m_EditorClassIdentifier: 
-  PlayerDataSync: {fileID: 782780690040848312, guid: a605fa652575843459ec54182c9183aa, type: 3}
-  Sword: {fileID: 5124384028496357592, guid: 1bc2d237e6c29bb44887b5adcda80296, type: 3}
+  Sword: {fileID: 6907863734851400352, guid: 1bc2d237e6c29bb44887b5adcda80296, type: 3}
+  PlayerDataSync: {fileID: -2209787500578316934, guid: a605fa652575843459ec54182c9183aa, type: 3}

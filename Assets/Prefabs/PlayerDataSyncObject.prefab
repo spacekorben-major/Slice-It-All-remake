@@ -9,8 +9,8 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8472827518418672296}
-  - component: {fileID: 782780690040848312}
-  - component: {fileID: 5195239855696169136}
+  - component: {fileID: -2209787500578316934}
+  - component: {fileID: 2738224775117577113}
   m_Layer: 0
   m_Name: PlayerDataSyncObject
   m_TagString: Untagged
@@ -33,7 +33,7 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &782780690040848312
+--- !u!114 &-2209787500578316934
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -42,10 +42,24 @@ MonoBehaviour:
   m_GameObject: {fileID: 57227974452283344}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9932db5c8bd1a2b49a8cdaf256eab180, type: 3}
+  m_Script: {fileID: 11500000, guid: 1b8f2ecafe5249638fa9f5438632423d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &5195239855696169136
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 0
+  SyncRotAngleX: 0
+  SyncRotAngleY: 0
+  SyncRotAngleZ: 1
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.001
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  InLocalSpace: 0
+  Interpolate: 1
+--- !u!114 &2738224775117577113
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -60,4 +74,4 @@ MonoBehaviour:
   GlobalObjectIdHash: 951099334
   AlwaysReplicateAsRoot: 0
   DontDestroyWithOwner: 0
-  AutoObjectParentSync: 1
+  AutoObjectParentSync: 0

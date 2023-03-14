@@ -3,7 +3,7 @@ using UnityEngine;
 using VContainer.Unity;
 using Random = System.Random;
 
-namespace Game.Core
+namespace Game.Environment
 {
     public sealed class MapGenerationService : IStartable
     {
@@ -11,15 +11,17 @@ namespace Game.Core
 
         private Random _random;
 
+        private int _randomSeed = -1;
+
         public void Start()
         {
-            _signalBus.Subscribe<NewGameEvent>(this, OnNewGame);
+            _signalBus.Subscribe<InitializeGameEvent>(this, OnNewGame);
             _random = new Random();
         }
 
-        private void OnNewGame(NewGameEvent gameEvent)
+        private void OnNewGame(InitializeGameEvent gameEvent)
         {
-            _random = gameEvent.MapSeed == -1 ? new Random() : new Random(gameEvent.MapSeed);
+            _random = new Random(_randomSeed);
             GenerateMap();
         }
 

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4f4a66177a354410be876413aa1f8701, type: 3}
+  m_Name: GeneralConfig
+  m_EditorClassIdentifier: 
+  YAcceleration: -4
+  YMaxVelocity: -2
+  XAdjust: 1
+  ZAdjust: 1
+  HorizontalVelocity: 1
+  YInputAcceleration: 2
+  FreeCutAngle: 180
+  NormalZRotationVelocity: -120
+  AcceleratedZRotationVelocity: -600
+  MaxRotationAngle: 190
+  MinRotationAngle: 270

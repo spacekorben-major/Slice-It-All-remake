@@ -1,6 +1,7 @@
-using System.Collections.Generic;
-using Game.Configs;
+using Game.Data;
+using Game.Events;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -12,27 +13,37 @@ namespace Game.Core
 
         private NetworkManager _networkManager;
 
-        private Dictionary<ulong, PlayerDataSync> _playerDataSyncObjects;
+        private ISignalBus _signalBus;
 
-        public PlayerService(PrefabMap prefabMap, NetworkManager networkManager)
+        public PlayerService(PrefabMap prefabMap, NetworkManager networkManager, ISignalBus signalBus)
         {
             _networkManager = networkManager;
             _prefabMap = prefabMap;
+            _signalBus = signalBus;
         }
 
         public void Start()
         {
-            _networkManager.OnClientConnectedCallback += OnPlayerConnected;
+            _signalBus.Subscribe<InitializeGameEvent>(this, SpawnSwords);
         }
 
-        private void OnPlayerConnected(ulong playerId)
+        public void SpawnSwords(InitializeGameEvent e)
         {
-            var playerSyncData = Object.Instantiate(_prefabMap.PlayerDataSync);
-
-            if (_networkManager.IsServer)
+            foreach (var networkObject in _networkManager.SpawnManager.SpawnedObjectsList)
             {
-                playerSyncData.NetworkObject.Spawn(true);
+                if (networkObject.gameObject.name == _prefabMap.PlayerDataSync.gameObject.name + "(Clone)")
+                {
+                    var transform = GameObject.Instantiate(_prefabMap.Sword);
+                    _signalBus.Publish(new KnifeAdded
+                    {
+                        Transform = transform,
+                        IsLocal = networkObject.IsLocalPlayer,
+                        PlayerDataSync = networkObject.GetComponent<NetworkTransform>()
+                    });
+                }
             }
+
+            _signalBus.Publish(new StartGameEvent());
         }
     }
 }

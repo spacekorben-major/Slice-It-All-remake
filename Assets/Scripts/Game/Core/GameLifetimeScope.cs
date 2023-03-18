@@ -3,6 +3,7 @@ using Game.Data;
 using Game.Environment;
 using Game.Events;
 using Game.Movement;
+using Game.Utils;
 using Game.Views;
 using Unity.Netcode;
 using UnityEngine;
@@ -28,6 +29,8 @@ namespace Game.Core
             builder.RegisterEntryPoint<PlayerService>();
             builder.RegisterEntryPoint<PlayerMovementService>();
             builder.RegisterEntryPoint<CameraService>();
+            builder.RegisterEntryPoint<SlicingService>();
+            builder.RegisterEntryPoint<MeshCut>().AsSelf();
 
             builder.RegisterComponentInHierarchy<MainMenuView>();
 

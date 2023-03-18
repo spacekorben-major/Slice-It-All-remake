@@ -5,11 +5,11 @@ namespace Game.Views
 {
     public sealed class ColliderView : MonoBehaviour
     {
-        public Action<int, int> CollisionTrigger = (_, _) => {};
+        public Action<Collision> CollisionTrigger = (_) => {};
 
-        private void OnTriggerEnter(Collider other)
+        private void OnCollisionEnter(Collision collision)
         {
-            CollisionTrigger(gameObject.layer, other.gameObject.layer);
+            CollisionTrigger(collision);
         }
     }
 }

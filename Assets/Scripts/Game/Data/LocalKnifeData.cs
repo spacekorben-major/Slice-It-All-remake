@@ -14,6 +14,6 @@ namespace Game.Data
 
         public float FreeCutAngle = 0;
 
-        public (int, int)? UnprocessedCollision;
+        public Collision UnprocessedCollision;
     }
 }

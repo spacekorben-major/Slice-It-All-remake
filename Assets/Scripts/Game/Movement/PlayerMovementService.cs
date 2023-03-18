@@ -92,7 +92,8 @@ namespace Game.Movement
                     PlayerDataSync = knifeAdded.PlayerDataSync
                 };
 
-                _localControllers.Add(new CollisionController(_localKnifeData, _generalConfig)); //TODO: organize controllers
+                //TODO: organize controllers
+                _localControllers.Add(new CollisionController(_localKnifeData, _generalConfig, _signalBus)); 
                 
                 return;
             }

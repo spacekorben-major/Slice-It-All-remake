@@ -1,4 +1,5 @@
 using Game.Data;
+using Game.Events;
 using UnityEngine;
 
 namespace Game.Movement.Controllers
@@ -12,6 +13,8 @@ namespace Game.Movement.Controllers
 
         private GeneralConfig _generalConfig;
 
+        private ISignalPublisher _signalPublisher;
+
         public void Apply(LocalKnifeData data, float deltaTime)
         {
             if (data.UnprocessedCollision == null)
@@ -19,15 +22,21 @@ namespace Game.Movement.Controllers
                 return;
             }
 
-            var myPartLayer = data.UnprocessedCollision.Value.Item1;
-            var encounteredLayer = data.UnprocessedCollision.Value.Item2;
-
-            data.UnprocessedCollision = null;
+            var myPartLayer = data.UnprocessedCollision.contacts[0].thisCollider.gameObject.layer;
+            var encounteredLayer = data.UnprocessedCollision.contacts[0].otherCollider.gameObject.layer;
 
             if (encounteredLayer == _sliceableLayer)
             {
+                _signalPublisher.Publish(new SlicedEvent
+                {
+                    Contact = data.UnprocessedCollision.contacts[0]
+                });
+
+                data.UnprocessedCollision = null;
                 return;
             }
+
+            data.UnprocessedCollision = null;
 
             if (myPartLayer == _handleLayer)
             {
@@ -49,13 +58,15 @@ namespace Game.Movement.Controllers
             }
         }
 
-        public CollisionController(LocalKnifeData data, GeneralConfig generalConfig)
+        public CollisionController(LocalKnifeData data, GeneralConfig generalConfig, ISignalPublisher signalPublisher)
         {
             _generalConfig = generalConfig;
-            
+
+            _signalPublisher = signalPublisher;
+
             foreach (var collider in data.KnifeView.Colliders)
             {
-                collider.CollisionTrigger += (myLayer, otherLayer) => data.UnprocessedCollision = (myLayer, otherLayer);
+                collider.CollisionTrigger += collision => data.UnprocessedCollision = collision;
             }
         }
     }

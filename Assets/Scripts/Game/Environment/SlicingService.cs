@@ -16,6 +16,37 @@ namespace Game.Environment
         public void Start()
         {
             _signalBus.Subscribe<SlicedEvent>(this, OnSliceAttempt);
+            _signalBus.Subscribe<StartGameEvent>(this, OnStartGame);
+        }
+
+        private void OnStartGame(StartGameEvent obj)
+        {
+            var timer = Stopwatch.StartNew();
+            var plane = new Plane(Vector3.forward, Vector3.zero);
+            var mesh = new Mesh
+            {
+                vertices = new[]
+                {
+                    new Vector3(-1, 0, -1),
+                    new Vector3(1, 0, 1),
+                    new Vector3(1, 0, -1)
+                },
+
+                triangles = new[]
+                {
+                    0, 1, 2
+                },
+
+                uv = new []
+                {
+                    Vector2.zero, Vector2.zero, Vector2.zero
+                }
+            };
+
+            _meshCut.Slice(mesh, plane, out var meshPositive, out var meshNegative,
+                out var positiveInsides, out var negativeInsides);
+            timer.Stop();
+            Debug.Log($"slice {timer.ElapsedMilliseconds.ToString()}");
         }
 
         private void OnSliceAttempt(SlicedEvent obj)

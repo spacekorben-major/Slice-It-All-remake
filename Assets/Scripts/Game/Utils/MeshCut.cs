@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -215,11 +214,6 @@ namespace Game.Utils
                 }
             }
 
-            for (var i = 0; i < _intersectionVertices.Count; i++)
-            {
-                _intersectionVertices[i] = ProjectPointOntoPlane(_intersectionVertices[i], cutPlane);
-            }
-
             Vector3 centroid = Vector3.zero;
             foreach (Vector3 point in _intersectionVertices)
             {
@@ -228,8 +222,8 @@ namespace Game.Utils
             centroid /= _intersectionVertices.Count;
 
             _intersectionVertices.Sort((pointA, pointB) =>
-                AngleBetweenPoints(centroid, pointA, pointB, cutPlane)
-                    .CompareTo(AngleBetweenPoints(centroid, pointB, pointA, cutPlane)));
+                Vector3.SignedAngle(pointA - centroid, pointB - centroid, cutPlane.normal)
+                    .CompareTo(Vector3.SignedAngle(pointB - centroid, pointA - centroid, cutPlane.normal)));
 
             GenerateInsideMeshData(centroid);
 
@@ -258,6 +252,11 @@ namespace Game.Utils
                 vertices = _verticesInsideNegative.ToArray(),
                 triangles = _trianglesInsideNegative.ToArray()
             };
+            
+            meshPositive.RecalculateNormals();
+            meshNegative.RecalculateNormals();
+            positiveInsides.RecalculateNormals();
+            negativeInsides.RecalculateNormals();
         }
 
         private void AddPoint(Vector3 point, Vector2 uvCoordinate, List<Vector3> verticesList, List<int> trianglesList,
@@ -268,22 +267,7 @@ namespace Game.Utils
             uvList.Add(uvCoordinate);
         }
 
-        private Vector3 ProjectPointOntoPlane(Vector3 point, Plane plane)
-        {
-            float distance = plane.GetDistanceToPoint(point);
-            return point - plane.normal * distance;
-        }
-
-        private float AngleBetweenPoints(Vector3 referencePoint, Vector3 pointA, Vector3 pointB, Plane cutPlane)
-        {
-            Vector3 dirA = (pointA - referencePoint).normalized;
-            Vector3 dirB = (pointB - referencePoint).normalized;
-            return Mathf.Atan2(
-                Vector3.Dot(cutPlane.normal, Vector3.Cross(dirA, dirB)), 
-                Vector3.Dot(dirA, dirB)
-            ) * Mathf.Rad2Deg;
-        }
-
+        // This will work for simpler meshes, but we might want to improve it later
         private void GenerateInsideMeshData(Vector3 centroid)
         {
             for (int i = 0; i < _intersectionVertices.Count; i++)

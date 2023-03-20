@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
+using Game.Data;
 using Game.Events;
 using Game.Utils;
+using Game.Views;
 using UnityEngine;
 using VContainer.Unity;
 
@@ -14,7 +14,7 @@ namespace Game.Environment
 
         private MeshCut _meshCut;
 
-        private bool _firstLaunch = true;
+        private PrefabMap _prefabMap;
 
         private List<GameObject> _spawnedObjects = new List<GameObject>();
 
@@ -52,76 +52,36 @@ namespace Game.Environment
             
             _spawnedObjects.Add(target.gameObject);
 
-            GameObject positiveMeshObject = new GameObject
-            {
-                layer = 0,
-                transform =
-                {
-                    position = target.transform.position,
-                    rotation = target.transform.rotation,
-                    localScale = target.transform.localScale
-                }
-            };
-
-            MeshFilter positiveMeshFilter = positiveMeshObject.AddComponent<MeshFilter>();
-            positiveMeshFilter.mesh = meshPositive;
-
-            _spawnedObjects.Add(positiveMeshObject);
-
-            MeshRenderer positiveMeshRenderer = positiveMeshObject.AddComponent<MeshRenderer>();
-            positiveMeshRenderer.material = targetMaterial;
-
-            positiveMeshObject.AddComponent<MeshCollider>().convex = true;
-            positiveMeshObject.AddComponent<Rigidbody>();
-
-            GameObject positiveMeshInsidesObject = new GameObject();
-            positiveMeshInsidesObject.transform.SetParent(positiveMeshObject.transform);
-            positiveMeshInsidesObject.layer = 0;
-            positiveMeshInsidesObject.transform.localPosition = Vector3.zero;
-            positiveMeshInsidesObject.transform.localScale = Vector3.one;
-
-            MeshFilter positiveInsidesMeshFilter = positiveMeshInsidesObject.AddComponent<MeshFilter>();
-            positiveInsidesMeshFilter.mesh = positiveInsides;
-
-            MeshRenderer positiveInsidesMeshRenderer = positiveMeshInsidesObject.AddComponent<MeshRenderer>();
-
-            GameObject negativeMeshObject = new GameObject
-            {
-                layer = 0,
-                transform =
-                {
-                    position = target.transform.position,
-                    rotation = target.transform.rotation,
-                    localScale = target.transform.localScale
-                }
-            };
-
-            _spawnedObjects.Add(negativeMeshObject);
-
-            MeshFilter negativeMeshFilter = negativeMeshObject.AddComponent<MeshFilter>();
-            negativeMeshFilter.mesh = meshNegative;
-            MeshRenderer negativeMeshRenderer = negativeMeshObject.AddComponent<MeshRenderer>();
-            negativeMeshRenderer.material = targetMaterial;
-
-            negativeMeshObject.AddComponent<MeshCollider>().convex = true;
-            negativeMeshObject.AddComponent<Rigidbody>();
-
-            GameObject negativeMeshInsidesObject = new GameObject();
-            negativeMeshInsidesObject.transform.SetParent(negativeMeshObject.transform);
-            negativeMeshInsidesObject.layer = 0;
-            negativeMeshInsidesObject.transform.localPosition = Vector3.zero;
-            negativeMeshInsidesObject.transform.localScale = Vector3.one;
-
-            MeshFilter negativeInsidesMeshFilter = negativeMeshInsidesObject.AddComponent<MeshFilter>();
-            negativeInsidesMeshFilter.mesh = negativeInsides;
-
-            MeshRenderer negativeInsidesMeshRenderer = negativeMeshInsidesObject.AddComponent<MeshRenderer>();
+            SpawnPart(target, meshPositive, targetMaterial, positiveInsides);
+            SpawnPart(target, meshNegative, targetMaterial, negativeInsides);
         }
 
-        public SlicingService(ISignalBus signalBus, MeshCut meshCut)
+        private void SpawnPart(GameObject target, Mesh mesh, Material material, Mesh insideMesh)
+        {
+            var slicedPart = GameObject.Instantiate<SlicedPartView>(_prefabMap.SlicedPartView);
+
+            _spawnedObjects.Add(slicedPart.gameObject);
+
+            slicedPart.gameObject.layer = 0;
+            
+            var transform = slicedPart.transform;
+            transform.position = target.transform.position;
+            transform.rotation = target.transform.rotation;
+            transform.localScale = target.transform.localScale;
+
+            slicedPart.MeshFilter.mesh = mesh;
+            slicedPart.MeshRenderer.material = material;
+            slicedPart.MeshCollider.sharedMesh = mesh;
+            slicedPart.MeshCollider.convex = true;
+
+            slicedPart.InternalsMeshFilter.mesh = insideMesh;
+        }
+
+        public SlicingService(ISignalBus signalBus, MeshCut meshCut, PrefabMap prefabMap)
         {
             _signalBus = signalBus;
             _meshCut = meshCut;
+            _prefabMap = prefabMap;
         }
     }
 }

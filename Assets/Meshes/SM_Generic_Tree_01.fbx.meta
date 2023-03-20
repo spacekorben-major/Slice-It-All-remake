@@ -1,6 +1,6 @@
 fileFormatVersion: 2
-guid: e4f88a2a674a4e9438af1010955c3b55
-timeCreated: 1547157027
+guid: e3650bb37d2641047a6ac0398ce4dc96
+timeCreated: 1547087904
 licenseType: Store
 ModelImporter:
   serializedVersion: 19
@@ -9,7 +9,7 @@ ModelImporter:
     400000: //RootNode
     2300000: //RootNode
     3300000: //RootNode
-    4300000: SM_Primitive_Cube_02
+    4300000: SM_Generic_Tree_01
     9500000: //RootNode
   materials:
     importMaterials: 0

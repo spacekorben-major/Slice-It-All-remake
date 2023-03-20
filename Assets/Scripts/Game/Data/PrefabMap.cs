@@ -12,5 +12,7 @@ namespace Game.Data
         public NetworkTransform PlayerDataSync;
 
         public GameObject Sliceables;
+
+        public SlicedPartView SlicedPartView;
     }
 }

@@ -35,6 +35,7 @@ namespace Game.Movement.Controllers
             if (myPartLayer == _handleLayer)
             {
                 data.HandleHit = true;
+                data.Stuck = false;
                 data.Velocity = new Vector3(data.Velocity.x, _generalConfig.YInputAcceleration);
                 return;
             }

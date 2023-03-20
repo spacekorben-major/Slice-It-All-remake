@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Game.Data;
 using Game.Events;
 using Game.Views;
@@ -14,6 +15,8 @@ namespace Game.Environment
 
         private PrefabMap _prefabMap;
 
+        private List<GameObject> _spawnedObjects = new List<GameObject>();
+
         public void Start()
         {
             _signalBus.Subscribe<InitializeGameEvent>(this, OnInitializeGame);
@@ -22,14 +25,19 @@ namespace Game.Environment
 
         private void OnResetGame(ResetGame obj)
         {
-            GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.MySliceableRoot);
-            GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.OpponentSliceableRoot);
+            foreach (var spawnedObject in _spawnedObjects)
+            {
+                GameObject.Destroy(spawnedObject.gameObject);
+            }
+
+            _spawnedObjects.Add(GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.MySliceableRoot));
+            _spawnedObjects.Add(GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.OpponentSliceableRoot));
         }
 
         private void OnInitializeGame(InitializeGameEvent obj)
         {
-            GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.MySliceableRoot);
-            GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.OpponentSliceableRoot);
+            _spawnedObjects.Add(GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.MySliceableRoot));
+            _spawnedObjects.Add(GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.OpponentSliceableRoot));
         }
 
         public MapGenerationService(ISignalBus signalBus, SliceableHolderView sliceableHolder, PrefabMap prefabMap)

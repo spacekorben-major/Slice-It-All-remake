@@ -2,8 +2,10 @@ using UnityEngine;
 
 namespace Game.Events
 {
-    public class SlicedEvent : IGameEvent
+    public sealed class SlicedEvent : IGameEvent
     {
+        public bool IsLocalPlayer; 
+
         public ContactPoint Contact;
     }
 }

@@ -21,9 +21,13 @@ namespace Game.Utils
         private List<Vector2> _uvPositive;
         private List<Vector2> _uvNegative;
 
+        private List<Color> _colorPositive;
+        private List<Color> _colorNegative;
+
         private List<int> _originalTrianglesCache;
         private List<Vector3> _originalVerticesCache;
         private List<Vector2> _originalUVCache;
+        private List<Color> _originalColorCache;
 
         private List<Vector3> _intersectionVertices;
 
@@ -46,8 +50,12 @@ namespace Game.Utils
             _originalTrianglesCache = new List<int>(kAllocationSize);
             _originalVerticesCache = new List<Vector3>(kAllocationSize);
             _originalUVCache = new List<Vector2>(kAllocationSize);
+            _originalColorCache = new List<Color>(kAllocationSize);
 
             _intersectionVertices = new List<Vector3>(kAllocationSize);
+
+            _colorPositive = new List<Color>(kAllocationSize);
+            _colorNegative = new List<Color>(kAllocationSize);
         }
 
         public void Slice(Mesh originalMesh, Plane cutPlane, out Mesh meshPositive, out Mesh meshNegative,
@@ -69,20 +77,49 @@ namespace Game.Utils
             _trianglesInsidePositive.Clear();
             _verticesInsideNegative.Clear();
             _verticesInsidePositive.Clear();
+            
+            _colorNegative.Clear();
+            _colorPositive.Clear();
 
             originalMesh.GetTriangles(_originalTrianglesCache, 0);
             originalMesh.GetVertices(_originalVerticesCache);
             originalMesh.GetUVs(0, _originalUVCache);
+            originalMesh.GetColors(_originalColorCache);
+
+            var colorEnabled = _originalColorCache.Count > 0;
+            var uvEnabled = _originalUVCache.Count > 0;
 
             for (int i = 0; i < _originalTrianglesCache.Count; i+=3)
             {
-                var vert0 = _originalVerticesCache[_originalTrianglesCache[i]];
-                var vert1 = _originalVerticesCache[_originalTrianglesCache[i + 1]];
-                var vert2 = _originalVerticesCache[_originalTrianglesCache[i + 2]];
+                var indexV0 = _originalTrianglesCache[i];
+                var indexV1 = _originalTrianglesCache[i+1];
+                var indexV2 = _originalTrianglesCache[i+2];
+                
+                var vert0 = _originalVerticesCache[indexV0];
+                var vert1 = _originalVerticesCache[indexV1];
+                var vert2 = _originalVerticesCache[indexV2];
 
-                var uv0 = _originalUVCache[_originalTrianglesCache[i]];
-                var uv1 = _originalUVCache[_originalTrianglesCache[i + 1]];
-                var uv2 = _originalUVCache[_originalTrianglesCache[i + 2]];
+                var uv0 = Vector2.zero;
+                var uv1 = Vector2.zero;
+                var uv2 = Vector2.zero;
+
+                if (uvEnabled)
+                {
+                    uv0 = _originalUVCache[indexV0];
+                    uv1 = _originalUVCache[indexV1];
+                    uv2 = _originalUVCache[indexV2];
+                }
+
+                var color0 = Color.black;
+                var color1 = Color.black;
+                var color2 = Color.black;
+
+                if (colorEnabled)
+                {
+                    color0 = _originalColorCache[indexV0];
+                    color1 = _originalColorCache[indexV1];
+                    color2 = _originalColorCache[indexV2];
+                }
 
                 var vert0Side = cutPlane.GetSide(vert0);
                 var vert1Side = cutPlane.GetSide(vert1);
@@ -90,13 +127,9 @@ namespace Game.Utils
 
                 if ((vert0Side == vert1Side)&&(vert0Side == vert2Side))
                 {
-                    var verticesList = vert0Side ? _verticesPositive : _verticesNegative;
-                    var trianglesList = vert0Side ? _trianglesPositive : _trianglesNegative;
-                    var uvList = vert0Side ? _uvPositive : _uvNegative;
-
-                    AddPoint(vert0, uv0, verticesList, trianglesList, uvList);
-                    AddPoint(vert1, uv1, verticesList, trianglesList, uvList);
-                    AddPoint(vert2, uv2, verticesList, trianglesList, uvList);
+                    AddPoint(indexV0, vert0Side, uvEnabled, colorEnabled);
+                    AddPoint(indexV1, vert0Side, uvEnabled, colorEnabled);
+                    AddPoint(indexV2, vert0Side, uvEnabled, colorEnabled);
 
                     continue;
                 }
@@ -107,33 +140,29 @@ namespace Game.Utils
                     cutPlane.Raycast(ray02, out var distance);
 
                     var intersection02 = ray02.GetPoint(distance);
-                    var uv02 = Vector2.Lerp(uv0, uv2, distance / (vert2 - vert0).magnitude);
+                    var t = distance / (vert2 - vert0).magnitude;
+                    var uv02 = Vector2.Lerp(uv0, uv2, t);
+                    var color02 = Color.Lerp(color0, color2, t);
 
                     var ray12 = new Ray(vert1, vert2 - vert1);
                     cutPlane.Raycast(ray12, out distance);
 
                     var intersection12 = ray12.GetPoint(distance);
-                    var uv12 = Vector2.Lerp(uv1, uv2, distance / (vert2 - vert1).magnitude);
+                    t = distance / (vert2 - vert1).magnitude;
+                    var uv12 = Vector2.Lerp(uv1, uv2, t);
+                    var color12 = Color.Lerp(color1, color2, t);
 
-                    var verticesListSolo = vert2Side ? _verticesPositive : _verticesNegative;
-                    var trianglesListSolo = vert2Side ? _trianglesPositive : _trianglesNegative;
-                    var uvListSolo = vert2Side ? _uvPositive : _uvNegative;
+                    AddPoint(intersection02, uv02, color02, vert2Side);
+                    AddPoint(intersection12, uv12, color12, vert2Side);
+                    AddPoint(indexV2, vert2Side, uvEnabled, colorEnabled);
 
-                    var verticesListDuo = vert2Side ? _verticesNegative : _verticesPositive;
-                    var trianglesListDuo = vert2Side ? _trianglesNegative : _trianglesPositive;
-                    var uvListDuo = vert2Side ? _uvNegative : _uvPositive;
+                    AddPoint(indexV0, vert0Side, uvEnabled, colorEnabled);
+                    AddPoint(indexV1, vert0Side, uvEnabled, colorEnabled);
+                    AddPoint(intersection02, uv02, color02, vert0Side);
 
-                    AddPoint(intersection02, uv02, verticesListSolo, trianglesListSolo, uvListSolo);
-                    AddPoint(intersection12, uv12, verticesListSolo, trianglesListSolo, uvListSolo);
-                    AddPoint(vert2, uv2, verticesListSolo, trianglesListSolo, uvListSolo);
-
-                    AddPoint(vert0, uv0, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(vert1, uv1, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(intersection02, uv02, verticesListDuo, trianglesListDuo, uvListDuo);
-
-                    AddPoint(vert1, uv1, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(intersection12, uv12, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(intersection02, uv02, verticesListDuo, trianglesListDuo, uvListDuo);
+                    AddPoint(indexV1, vert0Side, uvEnabled, colorEnabled);
+                    AddPoint(intersection12, uv12, color12, vert0Side);
+                    AddPoint(intersection02, uv02, color02, vert0Side);
 
                     _intersectionVertices.Add(intersection02);
                     _intersectionVertices.Add(intersection12);
@@ -144,33 +173,29 @@ namespace Game.Utils
                     cutPlane.Raycast(ray01, out var distance);
 
                     var intersection01 = ray01.GetPoint(distance);
-                    var uv01 = Vector2.Lerp(uv0, uv1, distance / (vert1 - vert0).magnitude);
+                    var t = distance / (vert1 - vert0).magnitude;
+                    var uv01 = Vector2.Lerp(uv0, uv1, t);
+                    var color01 = Color.Lerp(color0, color1, t);
 
                     var ray12 = new Ray(vert1, vert2 - vert1);
                     cutPlane.Raycast(ray12, out distance);
 
                     var intersection12 = ray12.GetPoint(distance);
-                    var uv12 = Vector2.Lerp(uv1, uv2, distance / (vert2 - vert1).magnitude);
+                    t = distance / (vert2 - vert1).magnitude;
+                    var uv12 = Vector2.Lerp(uv1, uv2, t);
+                    var color12 = Color.Lerp(color1, color2, t);
 
-                    var verticesListSolo = vert1Side ? _verticesPositive : _verticesNegative;
-                    var trianglesListSolo = vert1Side ? _trianglesPositive : _trianglesNegative;
-                    var uvListSolo = vert1Side ? _uvPositive : _uvNegative;
+                    AddPoint(intersection01, uv01, color01, vert1Side);
+                    AddPoint(indexV1, vert1Side, uvEnabled, colorEnabled);
+                    AddPoint(intersection12, uv12, color12, vert1Side);
 
-                    var verticesListDuo = vert1Side ? _verticesNegative : _verticesPositive;
-                    var trianglesListDuo = vert1Side ? _trianglesNegative : _trianglesPositive;
-                    var uvListDuo = vert1Side ? _uvNegative : _uvPositive;
+                    AddPoint(indexV0, vert0Side, uvEnabled, colorEnabled);
+                    AddPoint(intersection01, uv01, color01, vert0Side);
+                    AddPoint(indexV2, vert0Side, uvEnabled, colorEnabled);
 
-                    AddPoint(intersection01, uv01, verticesListSolo, trianglesListSolo, uvListSolo);
-                    AddPoint(vert1, uv1, verticesListSolo, trianglesListSolo, uvListSolo);
-                    AddPoint(intersection12, uv12, verticesListSolo, trianglesListSolo, uvListSolo);
-
-                    AddPoint(vert0, uv0, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(intersection01, uv01, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(vert2, uv2, verticesListDuo, trianglesListDuo, uvListDuo);
-
-                    AddPoint(intersection01, uv01, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(intersection12, uv12, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(vert2, uv2, verticesListDuo, trianglesListDuo, uvListDuo);
+                    AddPoint(intersection01, uv01, color01, vert0Side);
+                    AddPoint(intersection12, uv12, color12, vert0Side);
+                    AddPoint(indexV2, vert0Side, uvEnabled, colorEnabled);
 
                     _intersectionVertices.Add(intersection01);
                     _intersectionVertices.Add(intersection12);
@@ -181,33 +206,29 @@ namespace Game.Utils
                     cutPlane.Raycast(ray01, out var distance);
 
                     var intersection01 = ray01.GetPoint(distance);
-                    var uv01 = Vector2.Lerp(uv0, uv1, distance / (vert1 - vert0).magnitude);
+                    var t = distance / (vert1 - vert0).magnitude;
+                    var uv01 = Vector2.Lerp(uv0, uv1, t);
+                    var color01 = Color.Lerp(color0, color1, t);
 
                     var ray02 = new Ray(vert0, vert2 - vert0);
                     cutPlane.Raycast(ray02, out distance);
 
                     var intersection02 = ray02.GetPoint(distance);
-                    var uv02 = Vector2.Lerp(uv0, uv2, distance / (vert2 - vert0).magnitude);
+                    t = distance / (vert2 - vert0).magnitude;
+                    var uv02 = Vector2.Lerp(uv0, uv2, t);
+                    var color02 = Color.Lerp(color0, color2, t);
 
-                    var verticesListSolo = vert0Side ? _verticesPositive : _verticesNegative;
-                    var trianglesListSolo = vert0Side ? _trianglesPositive : _trianglesNegative;
-                    var uvListSolo = vert0Side ? _uvPositive : _uvNegative;
+                    AddPoint(indexV0, vert0Side, uvEnabled, colorEnabled);
+                    AddPoint(intersection01, uv01, color01, vert0Side);
+                    AddPoint(intersection02, uv02, color02, vert0Side);
 
-                    var verticesListDuo = vert0Side ? _verticesNegative : _verticesPositive;
-                    var trianglesListDuo = vert0Side ? _trianglesNegative : _trianglesPositive;
-                    var uvListDuo = vert0Side ? _uvNegative : _uvPositive;
+                    AddPoint(intersection01, uv01, color01, vert1Side);
+                    AddPoint(indexV1, vert1Side, uvEnabled, colorEnabled);
+                    AddPoint(intersection02, uv02, color02, vert1Side);
 
-                    AddPoint(vert0, uv0, verticesListSolo, trianglesListSolo, uvListSolo);
-                    AddPoint(intersection01, uv01, verticesListSolo, trianglesListSolo, uvListSolo);
-                    AddPoint(intersection02, uv02, verticesListSolo, trianglesListSolo, uvListSolo);
-
-                    AddPoint(intersection01, uv01, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(vert1, uv1, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(intersection02, uv02, verticesListDuo, trianglesListDuo, uvListDuo);
-
-                    AddPoint(intersection02, uv02, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(vert1, uv1, verticesListDuo, trianglesListDuo, uvListDuo);
-                    AddPoint(vert2, uv2, verticesListDuo, trianglesListDuo, uvListDuo);
+                    AddPoint(intersection02, uv02, color02, vert1Side);
+                    AddPoint(indexV1, vert1Side, uvEnabled, colorEnabled);
+                    AddPoint(indexV2, vert1Side, uvEnabled, colorEnabled);
 
                     _intersectionVertices.Add(intersection01);
                     _intersectionVertices.Add(intersection02);
@@ -252,19 +273,77 @@ namespace Game.Utils
                 vertices = _verticesInsideNegative.ToArray(),
                 triangles = _trianglesInsideNegative.ToArray()
             };
-            
+
+            if (colorEnabled)
+            {
+                meshPositive.colors = _colorPositive.ToArray();
+                meshNegative.colors = _colorNegative.ToArray();
+            }
+
+            if (uvEnabled)
+            {
+                meshPositive.uv = _uvPositive.ToArray();
+                meshNegative.uv = _uvNegative.ToArray();
+            }
+
+            meshPositive.RecalculateTangents();
+            meshNegative.RecalculateTangents();
             meshPositive.RecalculateNormals();
             meshNegative.RecalculateNormals();
             positiveInsides.RecalculateNormals();
             negativeInsides.RecalculateNormals();
         }
 
-        private void AddPoint(Vector3 point, Vector2 uvCoordinate, List<Vector3> verticesList, List<int> trianglesList,
-            List<Vector2> uvList)
+        private void AddPoint(int index, bool positive, bool uvAllowed, bool colorsAllowed)
         {
-            trianglesList.Add(verticesList.Count);
-            verticesList.Add(point);
-            uvList.Add(uvCoordinate);
+            if (positive)
+            {
+                _trianglesPositive.Add(_verticesPositive.Count);
+                _verticesPositive.Add(_originalVerticesCache[index]);
+
+                if (uvAllowed)
+                {
+                    _uvPositive.Add(_originalUVCache[index]);
+                }
+
+                if (colorsAllowed)
+                {
+                    _colorPositive.Add(_originalColorCache[index]);
+                }
+            }
+            else
+            {
+                _trianglesNegative.Add(_verticesNegative.Count);
+                _verticesNegative.Add(_originalVerticesCache[index]);
+
+                if (uvAllowed)
+                {
+                    _uvNegative.Add(_originalUVCache[index]);
+                }
+
+                if (colorsAllowed)
+                {
+                    _colorNegative.Add(_originalColorCache[index]);
+                }
+            }
+        }
+
+        private void AddPoint(Vector3 point, Vector2 uv, Color color, bool positive)
+        {
+            if (positive)
+            {
+                _trianglesPositive.Add(_verticesPositive.Count);
+                _verticesPositive.Add(point);
+                _uvPositive.Add(uv);
+                _colorPositive.Add(color);
+            }
+            else
+            {
+                _trianglesNegative.Add(_verticesNegative.Count);
+                _verticesNegative.Add(point);
+                _uvNegative.Add(uv);
+                _colorNegative.Add(color);
+            }
         }
 
         // This will work for simpler meshes, but we might want to improve it later

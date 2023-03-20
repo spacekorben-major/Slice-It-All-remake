@@ -5,7 +5,7 @@ namespace Game.Views
 {
     public sealed class ColliderView : MonoBehaviour
     {
-        public Action<Collision> CollisionTrigger = (_) => {};
+        public Action<Collision> CollisionTrigger = _ => { };
 
         private void OnCollisionEnter(Collision collision)
         {

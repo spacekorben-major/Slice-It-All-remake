@@ -1,5 +1,6 @@
 using Game.Data;
 using Game.Events;
+using Game.Views;
 using UnityEngine;
 
 namespace Game.Movement.Controllers
@@ -8,6 +9,7 @@ namespace Game.Movement.Controllers
     {
         private int _bladeLayer = LayerMask.NameToLayer("Blade");
         private int _environmentLayer = LayerMask.NameToLayer("Environment");
+        private int _gameEndLayer = LayerMask.NameToLayer("GameEnd");
         private int _sliceableLayer = LayerMask.NameToLayer("Sliceable");
         private int _handleLayer = LayerMask.NameToLayer("Handle");
 
@@ -17,36 +19,48 @@ namespace Game.Movement.Controllers
 
         public void Apply(LocalKnifeData data, float deltaTime)
         {
-            if (data.UnprocessedCollision == null)
+            if (data.UnprocessedCollision != null)
             {
-                return;
-            }
-
-            var myPartLayer = data.UnprocessedCollision.contacts[0].thisCollider.gameObject.layer;
-            var encounteredLayer = data.UnprocessedCollision.contacts[0].otherCollider.gameObject.layer;
-
-            if (encounteredLayer == _sliceableLayer)
-            {
-                _signalPublisher.Publish(new SlicedEvent
-                {
-                    Contact = data.UnprocessedCollision.contacts[0]
-                });
-
+                ProcessCollision(data);
                 data.UnprocessedCollision = null;
-                return;
             }
+        }
 
-            data.UnprocessedCollision = null;
+        private void ProcessCollision(LocalKnifeData data)
+        {
+            var contact = data.UnprocessedCollision.contacts[0];
+            var myPartLayer = contact.thisCollider.gameObject.layer;
+            var encounteredLayer = contact.otherCollider.gameObject.layer;
 
             if (myPartLayer == _handleLayer)
             {
                 data.HandleHit = true;
-                data.Velocity = new Vector3(_generalConfig.HorizontalVelocity, _generalConfig.YInputAcceleration);
+                data.Velocity = new Vector3(data.Velocity.x, _generalConfig.YInputAcceleration);
                 return;
             }
 
-            if (myPartLayer == _bladeLayer && encounteredLayer == _environmentLayer)
+            if (myPartLayer == _bladeLayer)
             {
+                if (encounteredLayer == _sliceableLayer)
+                {
+                    _signalPublisher.Publish(new SlicedEvent
+                    {
+                        IsLocalPlayer = true,
+                        Contact = contact
+                    });
+                    return;
+                }
+
+                if (encounteredLayer == _gameEndLayer)
+                {
+                    data.PlayerDataSync.Finished.Value = true;
+                    var mod = contact.otherCollider.gameObject.GetComponent<EndGameView>().Mod;
+                    _signalPublisher.Publish(new PlayerFinished(mod));
+                    data.Velocity = Vector3.zero;
+                    data.Stuck = true;
+                    return;
+                }
+
                 if (data.FreeCutAngle > 0)
                 {
                     return;
@@ -54,20 +68,14 @@ namespace Game.Movement.Controllers
 
                 data.Velocity = Vector3.zero;
                 data.Stuck = true;
-                return;
             }
         }
 
-        public CollisionController(LocalKnifeData data, GeneralConfig generalConfig, ISignalPublisher signalPublisher)
+        public CollisionController(GeneralConfig generalConfig, ISignalPublisher signalPublisher)
         {
             _generalConfig = generalConfig;
 
             _signalPublisher = signalPublisher;
-
-            foreach (var collider in data.KnifeView.Colliders)
-            {
-                collider.CollisionTrigger += collision => data.UnprocessedCollision = collision;
-            }
         }
     }
 }

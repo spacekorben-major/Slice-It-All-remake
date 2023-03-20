@@ -1,7 +1,8 @@
+using Game.Data;
 using Game.Events;
+using Game.Views;
 using UnityEngine;
 using VContainer.Unity;
-using Random = System.Random;
 
 namespace Game.Environment
 {
@@ -9,37 +10,33 @@ namespace Game.Environment
     {
         private ISignalBus _signalBus;
 
-        private Random _random;
+        private SliceableHolderView _sliceableHolder;
 
-        private int _randomSeed = -1;
+        private PrefabMap _prefabMap;
 
         public void Start()
         {
-            _signalBus.Subscribe<InitializeGameEvent>(this, OnNewGame);
-            _random = new Random();
+            _signalBus.Subscribe<InitializeGameEvent>(this, OnInitializeGame);
+            _signalBus.Subscribe<ResetGame>(this, OnResetGame);
         }
 
-        private void OnNewGame(InitializeGameEvent gameEvent)
+        private void OnResetGame(ResetGame obj)
         {
-            _random = new Random(_randomSeed);
-            GenerateMap();
+            GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.MySliceableRoot);
+            GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.OpponentSliceableRoot);
         }
 
-        private void GenerateMap()
+        private void OnInitializeGame(InitializeGameEvent obj)
         {
-            var mapString = "";
-
-            for (int i = 0; i < 10; i++)
-            {
-                mapString += $" {_random.Next(0, 4)}";
-            }
-            
-            Debug.Log(mapString);
+            GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.MySliceableRoot);
+            GameObject.Instantiate(_prefabMap.Sliceables, _sliceableHolder.OpponentSliceableRoot);
         }
 
-        public MapGenerationService(ISignalBus signalBus)
+        public MapGenerationService(ISignalBus signalBus, SliceableHolderView sliceableHolder, PrefabMap prefabMap)
         {
             _signalBus = signalBus;
+            _sliceableHolder = sliceableHolder;
+            _prefabMap = prefabMap;
         }
     }
 }

@@ -12,10 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f4a66177a354410be876413aa1f8701, type: 3}
   m_Name: GeneralConfig
   m_EditorClassIdentifier: 
+  StartingPosition: {x: 0, y: 0.815, z: 0.25}
+  StartingRotation: {x: 0, y: 0, z: 140}
   YAcceleration: -4
   YMaxVelocity: -2
   XAdjust: 1
-  ZAdjust: 1
+  ZAdjust: 2.25
   HorizontalVelocity: 1
   YInputAcceleration: 2
   FreeCutAngle: 180
@@ -23,3 +25,4 @@ MonoBehaviour:
   AcceleratedZRotationVelocity: -600
   MaxRotationAngle: 190
   MinRotationAngle: 270
+  MaxYToJump: 2.7

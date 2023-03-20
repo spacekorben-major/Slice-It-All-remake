@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace Game.Data
 {
-    public class LocalKnifeData : KnifeData
+    public sealed class LocalKnifeData : KnifeData
     {
         public Vector3 Velocity;
 
@@ -13,7 +13,5 @@ namespace Game.Data
         public bool HandleHit;
 
         public float FreeCutAngle = 0;
-
-        public Collision UnprocessedCollision;
     }
 }

@@ -9,7 +9,7 @@ namespace Game.Movement.Controllers
         public void Apply(KnifeData data)
         {
             var knifeTransform = data.KnifeView.transform;
-            var networkTransform = data.PlayerDataSync.transform;
+            var networkTransform = data.Transform.transform;
             var basePosition = networkTransform.position;
             var baseRotation = networkTransform.rotation;
 

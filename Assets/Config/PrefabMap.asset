@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Sword: {fileID: 6907863734851400352, guid: 1bc2d237e6c29bb44887b5adcda80296, type: 3}
   PlayerDataSync: {fileID: -2209787500578316934, guid: a605fa652575843459ec54182c9183aa, type: 3}
+  Sliceables: {fileID: 755078813255395397, guid: b136f9193e15368479d1838d9efc37c6, type: 3}

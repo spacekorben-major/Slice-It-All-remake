@@ -1,5 +1,6 @@
 using Game.Views;
 using Unity.Netcode.Components;
+using UnityEngine;
 
 namespace Game.Data
 {
@@ -7,6 +8,10 @@ namespace Game.Data
     {
         public KnifeView KnifeView;
 
-        public NetworkTransform PlayerDataSync;
+        public NetworkTransform Transform;
+
+        public PlayerDataSyncView PlayerDataSync;
+
+        public Collision UnprocessedCollision;
     }
 }

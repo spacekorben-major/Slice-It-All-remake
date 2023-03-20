@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using VContainer.Unity;
 
 namespace Game.Events
 {
-    public sealed class SignalBus : ISignalBus
+    public sealed class SignalBus : ISignalBus, ITickable
     {
         private readonly Dictionary<Type, List<Delegate>> _eventToSubscriptionMap = new();
 
@@ -11,21 +12,11 @@ namespace Game.Events
 
         private readonly object[] _args = new object[1];
 
+        private Queue<IGameEvent> _eventQueue = new Queue<IGameEvent>(); 
+
         public void Publish(IGameEvent gameEvent)
         {
-            var eventType = gameEvent.GetType();
-
-            if (!_eventToSubscriptionMap.ContainsKey(eventType))
-            {
-                return;
-            }
-
-            _args[0] = gameEvent;
-
-            foreach (var eventDelegate in _eventToSubscriptionMap[eventType])
-            {
-                eventDelegate.DynamicInvoke(_args);
-            }
+            _eventQueue.Enqueue(gameEvent);
         }
 
         public void Subscribe<T>(object key, Action<T> action) where T : IGameEvent
@@ -75,6 +66,27 @@ namespace Game.Events
             _keyToSubscriptionMap[key].Remove((typeof(T), action));
 
             _eventToSubscriptionMap[typeof(T)].Remove(action);
+        }
+
+        public void Tick()
+        {
+            while (_eventQueue.Count > 0)
+            {
+                var gameEvent = _eventQueue.Dequeue();
+                var eventType = gameEvent.GetType();
+
+                if (!_eventToSubscriptionMap.ContainsKey(eventType))
+                {
+                    return;
+                }
+
+                _args[0] = gameEvent;
+
+                foreach (var eventDelegate in _eventToSubscriptionMap[eventType])
+                {
+                    eventDelegate.DynamicInvoke(_args);
+                }
+            }
         }
     }
 }

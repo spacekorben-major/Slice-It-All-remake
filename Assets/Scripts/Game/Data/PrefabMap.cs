@@ -5,10 +5,12 @@ using UnityEngine;
 namespace Game.Data
 {
     [CreateAssetMenu(fileName = "Data", menuName = "ScriptableObjects/PrefabMap", order = 1)]
-    public class PrefabMap : ScriptableObject
+    public sealed class PrefabMap : ScriptableObject
     {
         public KnifeView Sword;
 
         public NetworkTransform PlayerDataSync;
+
+        public GameObject Sliceables;
     }
 }

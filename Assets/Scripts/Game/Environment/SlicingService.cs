@@ -1,52 +1,37 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using Game.Events;
 using Game.Utils;
 using UnityEngine;
 using VContainer.Unity;
-using Debug = UnityEngine.Debug;
 
 namespace Game.Environment
 {
-    public class SlicingService : IStartable
+    public sealed class SlicingService : IStartable
     {
         private ISignalBus _signalBus;
 
         private MeshCut _meshCut;
 
+        private bool _firstLaunch = true;
+
+        private List<GameObject> _spawnedObjects = new List<GameObject>();
+
         public void Start()
         {
             _signalBus.Subscribe<SlicedEvent>(this, OnSliceAttempt);
-            _signalBus.Subscribe<StartGameEvent>(this, OnStartGame);
+            _signalBus.Subscribe<ResetGame>(this, OnGameReset);
         }
 
-        private void OnStartGame(StartGameEvent obj)
+        private void OnGameReset(ResetGame obj)
         {
-            var timer = Stopwatch.StartNew();
-            var plane = new Plane(Vector3.forward, Vector3.zero);
-            var mesh = new Mesh
+            foreach (var spawnedObject in _spawnedObjects)
             {
-                vertices = new[]
-                {
-                    new Vector3(-1, 0, -1),
-                    new Vector3(1, 0, 1),
-                    new Vector3(1, 0, -1)
-                },
+                GameObject.Destroy(spawnedObject);
+            }
 
-                triangles = new[]
-                {
-                    0, 1, 2
-                },
-
-                uv = new []
-                {
-                    Vector2.zero, Vector2.zero, Vector2.zero
-                }
-            };
-
-            _meshCut.Slice(mesh, plane, out var meshPositive, out var meshNegative,
-                out var positiveInsides, out var negativeInsides);
-            timer.Stop();
-            Debug.Log($"slice {timer.ElapsedMilliseconds.ToString()}");
+            _spawnedObjects.Clear();
         }
 
         private void OnSliceAttempt(SlicedEvent obj)
@@ -60,13 +45,12 @@ namespace Game.Environment
             var targetMesh = target.GetComponent<MeshFilter>().mesh;
             var targetMaterial = target.GetComponent<MeshRenderer>().material;
 
-            var timer = Stopwatch.StartNew();
             _meshCut.Slice(targetMesh, cuttingPlane, out var meshPositive, out var meshNegative,
                 out var positiveInsides, out var negativeInsides);
-            timer.Stop();
-            Debug.Log($"slice {timer.ElapsedMilliseconds.ToString()}");
 
             target.gameObject.SetActive(false);
+            
+            _spawnedObjects.Add(target.gameObject);
 
             GameObject positiveMeshObject = new GameObject
             {
@@ -82,8 +66,13 @@ namespace Game.Environment
             MeshFilter positiveMeshFilter = positiveMeshObject.AddComponent<MeshFilter>();
             positiveMeshFilter.mesh = meshPositive;
 
+            _spawnedObjects.Add(positiveMeshObject);
+
             MeshRenderer positiveMeshRenderer = positiveMeshObject.AddComponent<MeshRenderer>();
             positiveMeshRenderer.material = targetMaterial;
+
+            positiveMeshObject.AddComponent<MeshCollider>().convex = true;
+            positiveMeshObject.AddComponent<Rigidbody>();
 
             GameObject positiveMeshInsidesObject = new GameObject();
             positiveMeshInsidesObject.transform.SetParent(positiveMeshObject.transform);
@@ -107,10 +96,15 @@ namespace Game.Environment
                 }
             };
 
+            _spawnedObjects.Add(negativeMeshObject);
+
             MeshFilter negativeMeshFilter = negativeMeshObject.AddComponent<MeshFilter>();
             negativeMeshFilter.mesh = meshNegative;
             MeshRenderer negativeMeshRenderer = negativeMeshObject.AddComponent<MeshRenderer>();
             negativeMeshRenderer.material = targetMaterial;
+
+            negativeMeshObject.AddComponent<MeshCollider>().convex = true;
+            negativeMeshObject.AddComponent<Rigidbody>();
 
             GameObject negativeMeshInsidesObject = new GameObject();
             negativeMeshInsidesObject.transform.SetParent(negativeMeshObject.transform);

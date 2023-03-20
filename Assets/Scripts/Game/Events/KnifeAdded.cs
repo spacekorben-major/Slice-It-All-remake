@@ -3,11 +3,13 @@ using Unity.Netcode.Components;
 
 namespace Game.Events
 {
-    public class KnifeAdded : IGameEvent
+    public sealed class KnifeAdded : IGameEvent
     {
         public KnifeView Transform;
 
-        public NetworkTransform PlayerDataSync;
+        public NetworkTransform NetworkTransform;
+
+        public PlayerDataSyncView SyncView;
 
         public bool IsLocal;
     }

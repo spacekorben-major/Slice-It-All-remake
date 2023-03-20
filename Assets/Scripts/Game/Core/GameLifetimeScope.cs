@@ -1,4 +1,3 @@
-using Cinemachine;
 using Game.Data;
 using Game.Environment;
 using Game.Events;
@@ -20,8 +19,14 @@ namespace Game.Core
 
         [SerializeField] private NetworkManager _networkManager;
 
-        [SerializeField] private CinemachineVirtualCamera _camera;
-        
+        [SerializeField] private CameraView _cameraView;
+
+        [SerializeField] private ScoreView _scoreView;
+
+        [SerializeField] private FinalScoreView _finalScoreView;
+
+        [SerializeField] private SliceableHolderView _sliceableHolder;
+
         protected override void Configure(IContainerBuilder builder)
         {
             builder.RegisterEntryPoint<GameInitializer>();
@@ -30,18 +35,23 @@ namespace Game.Core
             builder.RegisterEntryPoint<PlayerMovementService>();
             builder.RegisterEntryPoint<CameraService>();
             builder.RegisterEntryPoint<SlicingService>();
+            builder.RegisterEntryPoint<MultiplayerService>();
             builder.RegisterEntryPoint<MeshCut>().AsSelf();
+            builder.RegisterEntryPoint<ScoringService>();
 
             builder.RegisterComponentInHierarchy<MainMenuView>();
 
-            builder.Register<MainMenuService>(Lifetime.Singleton);
+            builder.Register<GameUIService>(Lifetime.Singleton);
             builder.Register<InputMap>(Lifetime.Singleton);
             builder.Register<SignalBus>(Lifetime.Singleton).AsImplementedInterfaces();
 
             builder.RegisterInstance(_prefabMap);
-            builder.RegisterInstance(_camera);
+            builder.RegisterInstance(_cameraView);
             builder.RegisterInstance(_generalConfig);
             builder.RegisterInstance(_networkManager);
+            builder.RegisterInstance(_scoreView);
+            builder.RegisterInstance(_finalScoreView);
+            builder.RegisterInstance(_sliceableHolder);
         }
     }
 }

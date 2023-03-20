@@ -23,22 +23,67 @@ namespace Game.Movement
 
         private List<KnifeData> _enemyDatas = new();
 
-        private bool _gameRunning = false;
+        private bool _localPlayerActive;
+        private bool _gameStarted;
 
         public void Start()
         {
             _signalBus.Subscribe<KnifeAdded>(this, OnPlayerAdded);
-            _signalBus.Subscribe<StartGameEvent>(this, _ =>
+            _signalBus.Subscribe<StartGameEvent>(this, OnGameStarted);
+            _signalBus.Subscribe<PlayerFinished>(this, OnPlayerFinished);
+            _signalBus.Subscribe<ResetGame>(this, OnGameReset);
+        }
+
+        private void OnGameReset(ResetGame obj)
+        {
+            _localKnifeData.KnifeView.transform.position = _generalConfig.StartingPosition;
+            _localKnifeData.KnifeView.transform.rotation = Quaternion.Euler(_generalConfig.StartingRotation);
+
+            _localKnifeData.Transform.transform.position = _generalConfig.StartingPosition;
+            _localKnifeData.Transform.transform.rotation = Quaternion.Euler(_generalConfig.StartingRotation);
+
+            _localKnifeData.PlayerDataSync.Finished.Value = false;
+
+            _localKnifeData.Stuck = true;
+            _localKnifeData.Velocity = Vector3.zero;
+            _localKnifeData.HandleHit = false;
+            _localKnifeData.AngularVelocity = Vector3.zero;
+        }
+
+        private void OnGameStarted(StartGameEvent obj)
+        {
+            if (_localControllers.Count == 0)
             {
                 InitializeControllers();
-                _gameRunning = true;
-                _inputMap.Enable();
-            });
+            }
+
+            _localPlayerActive = true;
+            _gameStarted = true;
+            _inputMap.Enable();
+        }
+
+        private void OnPlayerFinished(PlayerFinished obj)
+        {
+            _inputMap.Disable();
+            _localPlayerActive = false;
         }
 
         public void Tick()
         {
-            if (!_gameRunning)
+            if (!_gameStarted)
+            {
+                return;
+            }
+
+            foreach (var otherData in _enemyDatas)
+            {
+                foreach (var enemyController in _enemyControllers)
+                {
+                    enemyController.Apply(otherData);
+                }
+            }
+
+            if (!_localPlayerActive)
             {
                 return;
             }
@@ -48,14 +93,6 @@ namespace Game.Movement
             foreach (var localController in _localControllers)
             {
                 localController.Apply(_localKnifeData, deltaTime);
-            }
-
-            foreach (var otherData in _enemyDatas)
-            {
-                foreach (var enemyController in _enemyControllers)
-                {
-                    enemyController.Apply(otherData);
-                }
             }
         }
 
@@ -74,14 +111,20 @@ namespace Game.Movement
             _localControllers.Add(new RotationController(_generalConfig));
             _localControllers.Add(new VelocityApplierController());
             _localControllers.Add(new PositionTranslationController());
+            _localControllers.Add(new CollisionController(_generalConfig, _signalBus)); 
 
             _enemyControllers.Add(new PositionAdjustEnemyController(_generalConfig));
+            _enemyControllers.Add(new EnemyCollisionController(_signalBus));
         }
 
         private void OnPlayerAdded(KnifeAdded knifeAdded)
         {
             if (knifeAdded.IsLocal)
             {
+
+                knifeAdded.Transform.transform.position = _generalConfig.StartingPosition;
+                knifeAdded.Transform.transform.rotation = Quaternion.Euler(_generalConfig.StartingRotation);
+
                 _localKnifeData = new LocalKnifeData
                 {
                     Stuck = true,
@@ -89,20 +132,31 @@ namespace Game.Movement
                     Velocity = Vector3.zero,
                     AngularVelocity = Vector3.zero,
                     KnifeView = knifeAdded.Transform,
-                    PlayerDataSync = knifeAdded.PlayerDataSync
+                    Transform = knifeAdded.NetworkTransform,
+                    PlayerDataSync = knifeAdded.SyncView
                 };
 
-                //TODO: organize controllers
-                _localControllers.Add(new CollisionController(_localKnifeData, _generalConfig, _signalBus)); 
-                
+                foreach (var collider in knifeAdded.Transform.Colliders)
+                {
+                    collider.CollisionTrigger += collision => _localKnifeData.UnprocessedCollision = collision;
+                }
+
                 return;
             }
 
-            _enemyDatas.Add(new KnifeData
+            var enemyData = new KnifeData
             {
                 KnifeView = knifeAdded.Transform,
-                PlayerDataSync = knifeAdded.PlayerDataSync
-            });
+                Transform = knifeAdded.NetworkTransform,
+                PlayerDataSync = knifeAdded.SyncView
+            };
+
+            foreach (var collider in knifeAdded.Transform.Colliders)
+            {
+                collider.CollisionTrigger += collision => enemyData.UnprocessedCollision = collision;
+            }
+
+            _enemyDatas.Add(enemyData);
         }
     }
 }

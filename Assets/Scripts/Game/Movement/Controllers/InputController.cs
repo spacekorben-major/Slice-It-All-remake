@@ -8,10 +8,16 @@ namespace Game.Movement.Controllers
         private GeneralConfig _generalConfig;
 
         private InputMap _inputMap;
+
         public void Apply(LocalKnifeData data, float deltaTime)
         {
             if (_inputMap.Default.Slice.WasPerformedThisFrame())
             {
+                if (data.KnifeView.transform.position.y >= _generalConfig.MaxYToJump)
+                {
+                    return;
+                }
+
                 data.Stuck = false;
                 data.HandleHit = false;
                 data.FreeCutAngle = _generalConfig.FreeCutAngle;
@@ -24,21 +30,6 @@ namespace Game.Movement.Controllers
         {
             _generalConfig = generalConfig;
             _inputMap = inputMap;
-        }
-    }
-
-    public class PositionTranslationController : ILocalController
-    {
-        public void Apply(LocalKnifeData data, float deltaTime)
-        {
-            var transform = data.KnifeView.transform;
-            var targetTransform = data.PlayerDataSync.transform;
-
-            var position = transform.position;
-            var rotation = transform.rotation;
-
-            targetTransform.position = position;
-            targetTransform.rotation = rotation;
         }
     }
 }

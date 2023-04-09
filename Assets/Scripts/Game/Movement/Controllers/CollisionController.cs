@@ -8,7 +8,6 @@ namespace Game.Movement.Controllers
     public class CollisionController : ILocalController
     {
         private int _bladeLayer = LayerMask.NameToLayer("Blade");
-        private int _environmentLayer = LayerMask.NameToLayer("Environment");
         private int _gameEndLayer = LayerMask.NameToLayer("GameEnd");
         private int _sliceableLayer = LayerMask.NameToLayer("Sliceable");
         private int _handleLayer = LayerMask.NameToLayer("Handle");

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Game.Events;
-using Game.Multiplayer;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using Unity.Services.Authentication;
@@ -13,13 +12,15 @@ using Unity.Services.Relay.Models;
 using UnityEngine;
 using VContainer.Unity;
 
-namespace Game.Core
+namespace Game.Multiplayer
 {
     public sealed class MultiplayerService : IStartable, ITickable
     {
         private const int kCientsToPlay = 2;
 
-        private const string kRelayCode = "relayCode"; 
+        private const string kRelayCode = "relayCode";
+
+        private const string kLobbyName = "0";
 
         private ISignalBus _signalBus;
 
@@ -29,10 +30,20 @@ namespace Game.Core
 
         private Lobby _createdLobby;
 
+        private QueryLobbiesOptions _lobbyQueryOptions;
+
         public void Start()
         {
             _signalBus.Subscribe<InitializeGameEvent>(this, OnInitializeGame);
             _signalBus.Subscribe<AllPlayersConnected>(this, OnConnectionEstablished);
+
+            _lobbyQueryOptions = new QueryLobbiesOptions
+            {
+                Filters = new List<QueryFilter>
+                {
+                    new QueryFilter(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT)
+                }
+            };
         }
 
         private void OnConnectionEstablished(AllPlayersConnected obj)
@@ -97,18 +108,10 @@ namespace Game.Core
 
                 case MultiplayerJoinSequence.SignIn:
 
-                    var options = new QueryLobbiesOptions
-                    {
-                        Filters = new List<QueryFilter>
-                        {
-                            new QueryFilter(QueryFilter.FieldOptions.AvailableSlots, "0", QueryFilter.OpOptions.GT)
-                        }
-                    };
-
                     _loginSequenceTask = new MultiplayerTaskMetadata
                     {
                         Stage = MultiplayerJoinSequence.ListLobbies,
-                        Task = LobbyService.Instance.QueryLobbiesAsync(options)
+                        Task = LobbyService.Instance.QueryLobbiesAsync(_lobbyQueryOptions)
                     };
 
                     break;
@@ -155,7 +158,45 @@ namespace Game.Core
                     break;
 
                 case MultiplayerJoinSequence.CreateLobby:
+                    var createdLobbyResult = _loginSequenceTask.Task as Task<Lobby>;
+
+                    if (createdLobbyResult == null)
+                    {
+                        ConnectionError($"Invalid cast: {_loginSequenceTask.Task.GetType()} to Task<Lobby>");
+                        return;
+                    }
+
+                    _createdLobby = createdLobbyResult.Result;
+
+                    _loginSequenceTask = new MultiplayerTaskMetadata
+                    {
+                        Stage = MultiplayerJoinSequence.CheckLobbyCollision,
+                        Task = LobbyService.Instance.QueryLobbiesAsync(_lobbyQueryOptions)
+                    };
+                    break;
+
+                case MultiplayerJoinSequence.CheckLobbyCollision:
+ 
+                    lobbyQuery = _loginSequenceTask.Task as Task<QueryResponse>;
+
+                    if (lobbyQuery == null)
+                    {
+                        ConnectionError($"Invalid cast: {_loginSequenceTask.Task.GetType()} to Task<QueryResponse>");
+                        _loginSequenceTask = null;
+                        return;
+                    }
+
                     _loginSequenceTask = null;
+
+                    lobbyList = lobbyQuery.Result.Results;
+                    Debug.Log($"{lobbyList.Count}, {lobbyList[0].Id}, {_createdLobby.Id}");
+
+                    if (lobbyList.Count > 0 && lobbyList[0].Id != _createdLobby.Id)
+                    {
+                        _networkManager.Shutdown(true);
+                        JoinLobby(lobbyList[0]);
+                    }
+
                     break;
 
                 case MultiplayerJoinSequence.JoinLobby:
@@ -221,6 +262,7 @@ namespace Game.Core
                 Task = RelayService.Instance.JoinAllocationAsync(data.Value),
                 Stage = MultiplayerJoinSequence.JoinAllocation
             };
+            Debug.Log("Try join allocation");
         }
 
         private void CreateRelayAllocation()
@@ -228,7 +270,7 @@ namespace Game.Core
             _loginSequenceTask = new MultiplayerTaskMetadata
             {
                 // Host does not count as a player here, so -1
-                Task = RelayService.Instance.CreateAllocationAsync(kCientsToPlay),
+                Task = RelayService.Instance.CreateAllocationAsync(kCientsToPlay - 1),
                 Stage = MultiplayerJoinSequence.CreateRelayAllocation
             };
         }
@@ -247,7 +289,7 @@ namespace Game.Core
             _loginSequenceTask = new MultiplayerTaskMetadata
             {
                 Stage = MultiplayerJoinSequence.CreateLobby,
-                Task = LobbyService.Instance.CreateLobbyAsync("0", kCientsToPlay, new CreateLobbyOptions
+                Task = LobbyService.Instance.CreateLobbyAsync(kLobbyName, kCientsToPlay, new CreateLobbyOptions
                 {
                     Data = new Dictionary<string, DataObject>
                     {

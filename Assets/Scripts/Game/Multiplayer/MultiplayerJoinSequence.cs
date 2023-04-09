@@ -10,6 +10,7 @@ namespace Game.Multiplayer
         GetAllocationJoinCode,
         CreateLobby,
         JoinLobby,
-        JoinAllocation
+        JoinAllocation,
+        CheckLobbyCollision
     }
 }

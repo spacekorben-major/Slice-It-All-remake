@@ -2,6 +2,7 @@ using Game.Data;
 using Game.Environment;
 using Game.Events;
 using Game.Movement;
+using Game.Multiplayer;
 using Game.Utils;
 using Game.Views;
 using Unity.Netcode;

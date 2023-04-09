@@ -1,7 +1,6 @@
 using System.Threading.Tasks;
-using Game.Multiplayer;
 
-namespace Game.Core
+namespace Game.Multiplayer
 {
     public class MultiplayerTaskMetadata
     {

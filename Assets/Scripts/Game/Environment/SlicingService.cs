@@ -16,20 +16,12 @@ namespace Game.Environment
 
         private PrefabMap _prefabMap;
 
-        private bool _listenToCuts;
-
         private List<GameObject> _spawnedObjects = new List<GameObject>();
 
         public void Start()
         {
             _signalBus.Subscribe<SlicedEvent>(this, OnSliceAttempt);
             _signalBus.Subscribe<ResetGame>(this, OnGameReset);
-            _signalBus.Subscribe<StartGameEvent>(this, OnStartGame);
-        }
-
-        private void OnStartGame(StartGameEvent obj)
-        {
-            _listenToCuts = true;
         }
 
         private void OnGameReset(ResetGame obj)
@@ -40,7 +32,6 @@ namespace Game.Environment
             }
 
             _spawnedObjects.Clear();
-            _listenToCuts = false;
         }
 
         private void OnSliceAttempt(SlicedEvent obj)

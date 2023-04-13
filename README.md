@@ -23,7 +23,7 @@ The structure is pretty simple:
 * I am using VContainer for dependency injection.
 * As soon as the scene starts, main DI container instantiates all core game systems.
 
-* Multiplayer solution is based on Unity Relay, Unity Network for GameObjects and Unity Lobbies.
+* Multiplayer solution is based on Unity Relay, Unity Network for GameObjects and Unity Lobbies. First, each client tries to fetch all hosted lobbies. If there's any, it joins, if there's none it hosts one. After hosting a lobby client puts his unity relay key to the lobby data. Anyone who joins the lobby connects to the host using relay.
 
 * I use a custom made SignalBus that uses delegates to dispatch events. 
 This approach has its own problems, but I find it usefull for small projects.
@@ -31,6 +31,8 @@ This approach has its own problems, but I find it usefull for small projects.
 ---------------------
 
 ### Gameplay:
+
+It's a hypercasual game. You control a short sword and you need to cut as much fruits as you can. You can see your opponent also doing their best to score more then you. The player who scored more wins!
 
 ![ezgif com-video-to-gif](https://user-images.githubusercontent.com/69351628/230787126-d901b516-08d0-450a-bb02-22651e99d37c.gif)
 
